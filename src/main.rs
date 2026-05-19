@@ -33,6 +33,8 @@ struct AppConfig {
     #[serde(default)]
     volume: Option<f64>,
     #[serde(default)]
+    theme: Option<String>,
+    #[serde(default)]
     window_width: Option<f64>,
     #[serde(default)]
     window_height: Option<f64>,
@@ -46,6 +48,7 @@ struct IpcMessage {
     last_station: Option<String>,
     quality: Option<u16>,
     volume: Option<f64>,
+    theme: Option<String>,
     window_width: Option<f64>,
     window_height: Option<f64>,
     target_width: Option<f64>,
@@ -228,6 +231,9 @@ fn handle_ipc_message(message: &str, config_path: &PathBuf) -> AppResult<()> {
         }
         if message.volume.is_some() {
             config.volume = message.volume;
+        }
+        if message.theme.is_some() {
+            config.theme = message.theme;
         }
         if message.window_width.is_some() {
             config.window_width = message.window_width;
@@ -468,6 +474,37 @@ fn build_html(stations: &[Station], stations_json: &str, config: &AppConfig) -> 
   --line: #2b322e;
   --accent: #58d68d;
   --accent-2: #f7c948;
+  --header: #151816;
+  --sidebar: #141715;
+  --card: rgba(255,255,255,.025);
+  --card-border: rgba(255,255,255,.05);
+  --cover-bg: #252b27;
+  --content-bg: radial-gradient(circle at top left, rgba(88,214,141,.12), transparent 340px), var(--bg);
+  --button-primary-text: #07120b;
+  --favorite-muted: rgba(157,168,159,.75);
+  --heart-muted: rgba(157,168,159,.35);
+  --modal-shadow: rgba(0,0,0,.35);
+}}
+body.light {{
+  color-scheme: light;
+  --bg: #f5f7f4;
+  --panel: #ffffff;
+  --panel-2: #edf3ee;
+  --text: #161a17;
+  --muted: #667067;
+  --line: #d6ded7;
+  --accent: #2bb96f;
+  --accent-2: #f0b429;
+  --header: #ffffff;
+  --sidebar: #f7faf7;
+  --card: rgba(255,255,255,.8);
+  --card-border: rgba(31,42,35,.12);
+  --cover-bg: #e9eee9;
+  --content-bg: radial-gradient(circle at top left, rgba(43,185,111,.12), transparent 340px), var(--bg);
+  --button-primary-text: #06140b;
+  --favorite-muted: rgba(88,100,91,.75);
+  --heart-muted: rgba(88,100,91,.35);
+  --modal-shadow: rgba(22,26,23,.2);
 }}
 * {{ box-sizing: border-box; }}
 body {{
@@ -490,7 +527,7 @@ header {{
   align-items: center;
   padding: 18px 22px;
   border-bottom: 1px solid var(--line);
-  background: #151816;
+  background: var(--header);
 }}
 .window-toggle {{
   min-height: 38px;
@@ -530,7 +567,7 @@ main {{
   overflow: auto;
   border-right: 1px solid var(--line);
   padding: 12px;
-  background: #141715;
+  background: var(--sidebar);
 }}
 .station {{
   position: relative;
@@ -541,10 +578,10 @@ main {{
   align-items: center;
   min-height: 62px;
   padding: 10px 28px 10px 10px;
-  border: 1px solid rgba(255,255,255,.05);
+  border: 1px solid var(--card-border);
   border-radius: 7px;
   color: var(--text);
-  background: rgba(255,255,255,.025);
+  background: var(--card);
   text-align: left;
   cursor: pointer;
 }}
@@ -558,7 +595,7 @@ main {{
   height: 40px;
   border-radius: 7px;
   object-fit: cover;
-  background: #252b27;
+  background: var(--cover-bg);
 }}
 .station-name {{
   display: block;
@@ -574,7 +611,7 @@ main {{
   position: absolute;
   right: 8px;
   top: 6px;
-  color: rgba(157,168,159,.35);
+  color: var(--heart-muted);
   font-size: 15px;
   line-height: 1;
 }}
@@ -585,7 +622,7 @@ main {{
   min-width: 0;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  background: radial-gradient(circle at top left, rgba(88,214,141,.12), transparent 340px), var(--bg);
+  background: var(--content-bg);
 }}
 .now {{
   display: grid;
@@ -635,15 +672,19 @@ button.control, .quality button {{
   cursor: pointer;
 }}
 button.control.primary {{
-  min-width: 96px;
+  min-width: 64px;
   background: var(--accent);
-  color: #07120b;
+  color: var(--button-primary-text);
   border-color: transparent;
+}}
+button.control.settings-toggle {{
+  min-width: 52px;
+  font-size: 18px;
 }}
 button.control.favorite-toggle {{
   min-width: 52px;
   font-size: 20px;
-  color: rgba(157,168,159,.75);
+  color: var(--favorite-muted);
 }}
 button.control.favorite-toggle.active {{
   color: #161204;
@@ -696,11 +737,75 @@ footer {{
   align-items: center;
   padding: 14px 18px;
   border-top: 1px solid var(--line);
-  background: #151816;
+  background: var(--header);
   color: var(--muted);
   font-size: 13px;
 }}
 audio {{ width: 280px; }}
+.modal-backdrop {{
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: var(--modal-shadow);
+  z-index: 20;
+}}
+.modal-backdrop.hidden {{
+  display: none;
+}}
+.settings-modal {{
+  width: min(300px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 16px;
+  box-shadow: 0 20px 48px var(--modal-shadow);
+}}
+.settings-header {{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}}
+.settings-title {{
+  font-size: 18px;
+  font-weight: 800;
+}}
+.icon-button {{
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}}
+.settings-section {{
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}}
+.settings-label {{
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}}
+.theme-select {{
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 8px 10px;
+  font: inherit;
+}}
 @media (max-width: 700px) {{
   footer {{ grid-template-columns: 1fr; }}
 }}
@@ -742,8 +847,8 @@ audio {{ width: 280px; }}
           <div class="controls">
             <button id="play" class="control primary">Play</button>
             <button id="stop" class="control">Stop</button>
+            <button id="settings" class="control settings-toggle" title="Настройки">⚙</button>
             <button id="favorite" class="control favorite-toggle" title="Избранное">♥</button>
-            <div id="quality" class="quality" aria-label="Качество потока"></div>
             <input id="volume" class="volume" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
           <div class="now-track">
@@ -759,11 +864,31 @@ audio {{ width: 280px; }}
     </section>
   </main>
 </div>
+<div id="settings-modal" class="modal-backdrop hidden">
+  <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="settings-header">
+      <div id="settings-title" class="settings-title">Настройки</div>
+      <button id="settings-close" class="icon-button" title="Закрыть">×</button>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">Качество</div>
+      <div id="quality" class="quality" aria-label="Качество потока"></div>
+    </div>
+    <label class="settings-section">
+      <span class="settings-label">Тема</span>
+      <select id="theme-select" class="theme-select">
+        <option value="dark">Темная</option>
+        <option value="light">Светлая</option>
+      </select>
+    </label>
+  </div>
+</div>
 <script>
 var stations = {stations_json};
 var initialConfig = {config_json};
 var current = null;
 var currentQuality = Number(readSetting("quality", String(initialConfig.quality || 48)));
+var currentTheme = readSetting("theme", initialConfig.theme || "dark");
 var favorites = parseFavorites(readSetting("favorites", JSON.stringify(initialConfig.favorites || [])));
 var savedLastStation = readSetting("last_station", initialConfig.last_station || "");
 var savedVolume = Number(readSetting("volume", String(initialConfig.volume || 0.9)));
@@ -777,6 +902,10 @@ var status = document.getElementById("status");
 var quality = document.getElementById("quality");
 var favoriteButton = document.getElementById("favorite");
 var widthToggle = document.getElementById("width-toggle");
+var settingsButton = document.getElementById("settings");
+var settingsModal = document.getElementById("settings-modal");
+var settingsClose = document.getElementById("settings-close");
+var themeSelect = document.getElementById("theme-select");
 var track = document.getElementById("track");
 var metaTimer = null;
 var metaToken = 0;
@@ -820,6 +949,7 @@ function saveAppConfig() {{
     last_station: current ? current.id : savedLastStation,
     quality: currentQuality,
     volume: audio.volume,
+    theme: currentTheme,
     window_width: window.innerWidth,
     window_height: window.innerHeight
   }};
@@ -827,11 +957,30 @@ function saveAppConfig() {{
   writeSetting("last_station", payload.last_station || "");
   writeSetting("quality", String(currentQuality));
   writeSetting("volume", String(audio.volume));
+  writeSetting("theme", currentTheme);
   try {{
     if (window.ipc && window.ipc.postMessage) {{
       window.ipc.postMessage(JSON.stringify(payload));
     }}
   }} catch (error) {{}}
+}}
+
+function normalizeTheme(theme) {{
+  return theme === "light" ? "light" : "dark";
+}}
+
+function applyTheme(theme) {{
+  currentTheme = normalizeTheme(theme);
+  document.body.className = currentTheme === "light" ? "light" : "";
+  themeSelect.value = currentTheme;
+}}
+
+function openSettings() {{
+  settingsModal.className = "modal-backdrop";
+}}
+
+function closeSettings() {{
+  settingsModal.className = "modal-backdrop hidden";
 }}
 
 function postToggleWidth() {{
@@ -1057,6 +1206,18 @@ document.getElementById("play").addEventListener("click", play);
 document.getElementById("stop").addEventListener("click", stop);
 favoriteButton.addEventListener("click", function() {{ toggleFavorite(current); }});
 widthToggle.addEventListener("click", postToggleWidth);
+settingsButton.addEventListener("click", openSettings);
+settingsClose.addEventListener("click", closeSettings);
+settingsModal.addEventListener("click", function(event) {{
+  if (event.target === settingsModal) closeSettings();
+}});
+themeSelect.addEventListener("change", function(event) {{
+  applyTheme(event.target.value);
+  saveAppConfig();
+}});
+document.addEventListener("keydown", function(event) {{
+  if (event.key === "Escape") closeSettings();
+}});
 document.getElementById("volume").addEventListener("input", function(event) {{
   audio.volume = Number(event.target.value);
   saveAppConfig();
@@ -1067,9 +1228,10 @@ function updateWindowSize() {{
   saveAppConfig();
 }}
 window.addEventListener("resize", updateWindowSize);
-updateWindowSize();
+applyTheme(currentTheme);
 audio.volume = isFinite(savedVolume) ? Math.min(1, Math.max(0, savedVolume)) : 0.9;
 document.getElementById("volume").value = String(audio.volume);
+updateWindowSize();
 audio.addEventListener("waiting", function() {{ status.textContent = "Буферизация..."; }});
 audio.addEventListener("error", function() {{ status.textContent = "Ошибка аудиопотока. Попробуйте другое качество или станцию."; }});
 render();
