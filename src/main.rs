@@ -571,7 +571,7 @@ header {{
   font-family: inherit;
   font-size: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }}
 .window-toggle:hover {{
   background: var(--panel-2);
@@ -590,7 +590,7 @@ header {{
   padding: 10px 14px;
   font-family: inherit;
   font-size: 14px;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }}
 .search:focus {{
   outline: none;
@@ -599,7 +599,7 @@ header {{
 }}
 main {{
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) 320px;
+  grid-template-columns: 320px minmax(240px, 1fr);
   min-height: 0;
   overflow-x: auto;
 }}
@@ -609,7 +609,7 @@ main {{
   align-content: start;
   gap: 10px;
   overflow-y: auto;
-  border-right: 1px solid var(--line);
+  border-left: 1px solid var(--line);
   padding: 16px;
   background: var(--sidebar);
 }}
@@ -644,17 +644,17 @@ body.light .sidebar::-webkit-scrollbar-thumb {{
   background: var(--card);
   text-align: left;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }}
 .station:hover {{
   background: var(--panel-2);
   border-color: rgba(255, 255, 255, 0.08);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }}
 body.light .station:hover {{
   border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
 }}
 .station.active {{
   background: rgba(var(--accent-rgb), 0.06);
@@ -688,7 +688,7 @@ body.light .station:hover {{
   color: var(--heart-muted);
   font-size: 16px;
   line-height: 1;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }}
 .station:hover .heart {{
   color: var(--favorite-muted);
@@ -696,6 +696,39 @@ body.light .station:hover {{
 .station.favorite .heart {{
   color: var(--accent-2) !important;
   text-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+}}
+
+/* Equalizer styles for active and playing station */
+.playing-eq {{
+  display: none;
+  align-items: flex-end;
+  gap: 2px;
+  width: 14px;
+  height: 12px;
+  position: absolute;
+  right: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+}}
+.playing-eq span {{
+  width: 2px;
+  height: 100%;
+  background-color: var(--accent);
+  border-radius: 1px;
+  transform-origin: bottom;
+  animation: eq-bounce 0.8s ease-in-out infinite alternate;
+}}
+.playing-eq span:nth-child(1) {{ animation-delay: -0.2s; }}
+.playing-eq span:nth-child(2) {{ animation-delay: -0.4s; }}
+.playing-eq span:nth-child(3) {{ animation-delay: -0.1s; }}
+
+@keyframes eq-bounce {{
+  0% {{ transform: scaleY(0.15); }}
+  100% {{ transform: scaleY(1.0); }}
+}}
+
+.station.active.playing .playing-eq {{
+  display: inline-flex;
 }}
 .content {{
   min-width: 0;
@@ -722,7 +755,7 @@ body.light .station:hover {{
   background: var(--panel);
   border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }}
 body.light .cover {{
   border-color: rgba(0,0,0,0.05);
@@ -730,6 +763,20 @@ body.light .cover {{
 }}
 .cover:hover {{
   transform: scale(1.02);
+}}
+.cover.playing {{
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3), 0 0 24px rgba(var(--accent-rgb), 0.2);
+  animation: cover-glow 4s ease-in-out infinite alternate;
+}}
+@keyframes cover-glow {{
+  0% {{
+    transform: scale(1.01);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(var(--accent-rgb), 0.15);
+  }}
+  100% {{
+    transform: scale(1.03);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.35), 0 0 35px rgba(var(--accent-rgb), 0.3);
+  }}
 }}
 .title {{
   margin: 0 0 6px;
@@ -766,12 +813,12 @@ button.control, .quality button {{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }}
 button.control:hover {{
   background: var(--panel-2);
   border-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-0.5px);
+  transform: translateY(-1px);
 }}
 body.light button.control:hover {{
   border-color: rgba(0, 0, 0, 0.08);
@@ -1030,11 +1077,10 @@ body.light .settings-modal {{
 <body>
 <div class="shell">
   <header>
-    <button id="width-toggle" class="window-toggle" title="Свернуть боковую панель">◀</button>
     <input id="search" class="search" type="search" placeholder="Поиск станции">
+    <button id="width-toggle" class="window-toggle" title="Свернуть боковую панель">▶</button>
   </header>
   <main>
-    <aside id="list" class="sidebar">{list_html}</aside>
     <section class="content">
       <div class="now">
         <img id="cover" class="cover" alt="">
@@ -1058,6 +1104,7 @@ body.light .settings-modal {{
         <audio id="audio" crossorigin="anonymous"></audio>
       </footer>
     </section>
+    <aside id="list" class="sidebar">{list_html}</aside>
   </main>
 </div>
 <div id="settings-modal" class="modal-backdrop hidden">
@@ -1240,7 +1287,7 @@ function postToggleWidth() {{
 
 function updateWidthToggle() {{
   var collapsed = window.innerWidth <= 540;
-  widthToggle.textContent = collapsed ? "▶" : "◀";
+  widthToggle.textContent = collapsed ? "◀" : "▶";
   widthToggle.title = collapsed ? "Развернуть боковую панель" : "Свернуть боковую панель";
 }}
 
@@ -1291,6 +1338,7 @@ function streamFor(station) {{
 function render(items) {{
   items = sortedStations(items || stations);
   list.innerHTML = "";
+  var isCurrentlyPlaying = !audio.paused && audio.src;
   for (var index = 0; index < items.length; index += 1) {{
     var station = items[index];
     var button = document.createElement("button");
@@ -1299,8 +1347,18 @@ function render(items) {{
     var name = document.createElement("span");
     var heart = document.createElement("span");
 
+    var eq = document.createElement("span");
+    eq.className = "playing-eq";
+    var bar1 = document.createElement("span");
+    var bar2 = document.createElement("span");
+    var bar3 = document.createElement("span");
+    eq.appendChild(bar1);
+    eq.appendChild(bar2);
+    eq.appendChild(bar3);
+
     button.className = "station"
       + (current && current.id === station.id ? " active" : "")
+      + (current && current.id === station.id && isCurrentlyPlaying ? " playing" : "")
       + (isFavorite(station) ? " favorite" : "");
     img.src = station.logo;
     img.alt = "";
@@ -1312,6 +1370,7 @@ function render(items) {{
     text.appendChild(heart);
     button.appendChild(img);
     button.appendChild(text);
+    button.appendChild(eq);
     button.addEventListener("click", stationClickHandler(station));
     button.addEventListener("contextmenu", stationFavoriteHandler(station));
     list.appendChild(button);
@@ -1453,13 +1512,24 @@ function togglePlay() {{
 
 function updatePlayButtonState(isPlaying) {{
   var playBtn = document.getElementById("play");
+  var cover = document.getElementById("cover");
   if (playBtn) {{
     if (isPlaying) {{
       playBtn.textContent = "Stop";
       playBtn.className = "control primary playing";
+      if (cover) cover.classList.add("playing");
     }} else {{
       playBtn.textContent = "Play";
       playBtn.className = "control primary";
+      if (cover) cover.classList.remove("playing");
+    }}
+  }}
+  var activeStationBtn = document.querySelector(".station.active");
+  if (activeStationBtn) {{
+    if (isPlaying) {{
+      activeStationBtn.classList.add("playing");
+    }} else {{
+      activeStationBtn.classList.remove("playing");
     }}
   }}
 }}
