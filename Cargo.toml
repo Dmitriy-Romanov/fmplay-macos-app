@@ -11,7 +11,7 @@ wry = "0.53"
 
 [profile.release]
 codegen-units = 1
-lto = true
+lto = "fat"
 opt-level = "z"
 panic = "abort"
-strip = "symbols"
+strip = true
