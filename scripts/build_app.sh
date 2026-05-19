@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="FMPLAY Radio"
 BINARY_NAME="fmplay_macos_app"
+APP_VERSION="$(awk -F'"' '/^version = / { print $2; exit }' "$ROOT_DIR/Cargo.toml")"
 APP_DIR="$ROOT_DIR/target/release/$APP_NAME.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
@@ -40,9 +41,9 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.0</string>
+  <string>__APP_VERSION__</string>
   <key>CFBundleVersion</key>
-  <string>0.1.0</string>
+  <string>__APP_VERSION__</string>
   <key>LSMinimumSystemVersion</key>
   <string>11.0</string>
   <key>NSHighResolutionCapable</key>
@@ -50,5 +51,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 </dict>
 </plist>
 PLIST
+
+perl -0pi -e "s/__APP_VERSION__/$APP_VERSION/g" "$CONTENTS_DIR/Info.plist"
 
 echo "$APP_DIR"
