@@ -581,10 +581,6 @@ main {{
 .station.favorite .heart {{
   color: var(--accent-2);
 }}
-.station.favorite {{
-  background: rgba(247,201,72,.07);
-  border-color: rgba(247,201,72,.25);
-}}
 .content {{
   min-width: 0;
   display: grid;

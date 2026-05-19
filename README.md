@@ -23,3 +23,17 @@ cargo build --release
 ```
 
 Готовый бинарник будет в `target/release/fmplay_macos_app`.
+
+## macOS app
+
+Чтобы собрать `.app` с иконкой FMPLAY:
+
+```sh
+scripts/build_app.sh
+```
+
+Готовое приложение будет в:
+
+```text
+target/release/FMPLAY Radio.app
+```
