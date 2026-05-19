@@ -765,17 +765,17 @@ body.light .cover {{
   transform: scale(1.02);
 }}
 .cover.playing {{
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3), 0 0 24px rgba(var(--accent-rgb), 0.2);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(var(--accent-rgb), 0.35);
   animation: cover-glow 4s ease-in-out infinite alternate;
 }}
 @keyframes cover-glow {{
   0% {{
     transform: scale(1.01);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(var(--accent-rgb), 0.15);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(var(--accent-rgb), 0.3);
   }}
   100% {{
     transform: scale(1.06);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35), 0 0 40px rgba(var(--accent-rgb), 0.35);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.35), 0 0 60px rgba(var(--accent-rgb), 0.7);
   }}
 }}
 .title {{
