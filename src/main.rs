@@ -36,6 +36,8 @@ struct AppConfig {
     #[serde(default)]
     theme: Option<String>,
     #[serde(default)]
+    only_favorites: Option<bool>,
+    #[serde(default)]
     window_width: Option<f64>,
     #[serde(default)]
     window_height: Option<f64>,
@@ -50,6 +52,7 @@ struct IpcMessage {
     quality: Option<u16>,
     volume: Option<f64>,
     theme: Option<String>,
+    only_favorites: Option<bool>,
     window_width: Option<f64>,
     window_height: Option<f64>,
     target_width: Option<f64>,
@@ -244,6 +247,9 @@ fn handle_ipc_message(message: &str, config_path: &PathBuf) -> AppResult<()> {
         }
         if message.theme.is_some() {
             config.theme = message.theme;
+        }
+        if message.only_favorites.is_some() {
+            config.only_favorites = message.only_favorites;
         }
         if message.window_width.is_some() {
             config.window_width = message.window_width;
@@ -1071,6 +1077,13 @@ body.light .settings-modal {{
         <button class="theme-btn" data-theme="light">Светлая</button>
       </div>
     </div>
+    <div class="settings-section">
+      <span class="settings-label">Список станций</span>
+      <div id="favorites-segmented" class="quality" aria-label="Фильтрация списка">
+        <button class="fav-filter-btn" data-filter="all">Все станции</button>
+        <button class="fav-filter-btn" data-filter="favorites">Только избранное</button>
+      </div>
+    </div>
   </div>
 </div>
 <script>
@@ -1082,6 +1095,7 @@ var currentTheme = readSetting("theme", initialConfig.theme || "dark");
 var favorites = parseFavorites(readSetting("favorites", JSON.stringify(initialConfig.favorites || [])));
 var savedLastStation = readSetting("last_station", initialConfig.last_station || "");
 var savedVolume = Number(readSetting("volume", String(initialConfig.volume || 0.9)));
+var onlyFavorites = readSetting("only_favorites", String(initialConfig.only_favorites || false)) === "true";
 var list = document.getElementById("list");
 var search = document.getElementById("search");
 var audio = document.getElementById("audio");
@@ -1157,6 +1171,7 @@ function saveAppConfig() {{
     quality: currentQuality,
     volume: audio.volume,
     theme: currentTheme,
+    only_favorites: onlyFavorites,
     window_width: window.innerWidth,
     window_height: window.innerHeight
   }};
@@ -1165,6 +1180,7 @@ function saveAppConfig() {{
   writeSetting("quality", String(currentQuality));
   writeSetting("volume", String(audio.volume));
   writeSetting("theme", currentTheme);
+  writeSetting("only_favorites", String(onlyFavorites));
   try {{
     if (window.ipc && window.ipc.postMessage) {{
       window.ipc.postMessage(JSON.stringify(payload));
@@ -1188,6 +1204,21 @@ function applyTheme(theme) {{
       btn.className = "theme-btn";
     }}
   }}
+}}
+
+function applyFavoritesFilter(onlyFav) {{
+  onlyFavorites = onlyFav;
+  var buttons = document.getElementById("favorites-segmented").getElementsByClassName("fav-filter-btn");
+  for (var index = 0; index < buttons.length; index += 1) {{
+    var btn = buttons[index];
+    var isFavBtn = btn.getAttribute("data-filter") === "favorites";
+    if (isFavBtn === onlyFavorites) {{
+      btn.className = "fav-filter-btn active";
+    }} else {{
+      btn.className = "fav-filter-btn";
+    }}
+  }}
+  render(filteredStations());
 }}
 
 function openSettings() {{
@@ -1435,8 +1466,14 @@ function updatePlayButtonState(isPlaying) {{
 
 function filteredStations() {{
   var q = search.value.trim().toLowerCase();
-  if (!q) return stations;
-  return stations.filter(function(station) {{
+  var filtered = stations;
+  if (onlyFavorites) {{
+    filtered = filtered.filter(function(station) {{
+      return isFavorite(station);
+    }});
+  }}
+  if (!q) return filtered;
+  return filtered.filter(function(station) {{
     return station.name.toLowerCase().indexOf(q) !== -1 || station.id.toLowerCase().indexOf(q) !== -1;
   }});
 }}
@@ -1464,6 +1501,13 @@ for (var btnIndex = 0; btnIndex < themeBtns.length; btnIndex += 1) {{
     saveAppConfig();
   }});
 }}
+var filterBtns = document.getElementById("favorites-segmented").getElementsByClassName("fav-filter-btn");
+for (var btnIndex = 0; btnIndex < filterBtns.length; btnIndex += 1) {{
+  filterBtns[btnIndex].addEventListener("click", function(event) {{
+    applyFavoritesFilter(event.target.getAttribute("data-filter") === "favorites");
+    saveAppConfig();
+  }});
+}}
 document.addEventListener("keydown", function(event) {{
   if (event.key === "Escape") closeSettings();
 }});
@@ -1478,6 +1522,7 @@ function updateWindowSize() {{
 }}
 window.addEventListener("resize", updateWindowSize);
 applyTheme(currentTheme);
+applyFavoritesFilter(onlyFavorites);
 audio.volume = isFinite(savedVolume) ? Math.min(1, Math.max(0, savedVolume)) : 0.9;
 document.getElementById("volume").value = String(audio.volume);
 updateWindowSize();
@@ -1488,7 +1533,7 @@ audio.addEventListener("ended", function() {{ updatePlayButtonState(false); }});
 audio.addEventListener("emptied", function() {{ updatePlayButtonState(false); }});
 audio.addEventListener("waiting", function() {{ status.textContent = "Буферизация..."; }});
 audio.addEventListener("error", function() {{ status.textContent = "Ошибка аудиопотока. Попробуйте другое качество или станцию."; }});
-render();
+render(filteredStations());
 if (stations.length > 0) selectStation(findStationById(savedLastStation) || stations[0], false);
 updateFavoriteButton();
 </script>
