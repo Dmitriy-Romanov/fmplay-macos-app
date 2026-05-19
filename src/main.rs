@@ -110,7 +110,7 @@ fn main() -> AppResult<()> {
     let loader_config_path = config_path.clone();
     let resize_config_path = config_path.clone();
     let initial_width = startup_config.window_width.unwrap_or(1040.0).max(300.0);
-    let initial_height = startup_config.window_height.unwrap_or(736.0).max(736.0);
+    let initial_height = startup_config.window_height.unwrap_or(744.0).max(744.0);
 
     let event_loop = EventLoopBuilder::<AppEvent>::with_user_event().build();
     let loader_proxy = event_loop.create_proxy();
@@ -118,7 +118,7 @@ fn main() -> AppResult<()> {
     let window = WindowBuilder::new()
         .with_title("FMPLAY Radio")
         .with_inner_size(LogicalSize::new(initial_width, initial_height))
-        .with_min_inner_size(LogicalSize::new(300.0, 736.0))
+        .with_min_inner_size(LogicalSize::new(300.0, 744.0))
         .build(&event_loop)?;
 
     let webview = WebViewBuilder::new()
@@ -172,7 +172,7 @@ fn main() -> AppResult<()> {
                 let logical_size = window.inner_size().to_logical::<f64>(window.scale_factor());
                 window.set_inner_size(LogicalSize::new(
                     target_width.clamp(300.0, 760.0),
-                    logical_size.height.max(736.0),
+                    logical_size.height.max(744.0),
                 ));
             }
             Event::UserEvent(AppEvent::SetTitle(title)) => {
@@ -191,7 +191,7 @@ fn main() -> AppResult<()> {
                 let logical_size = size.to_logical::<f64>(window.scale_factor());
                 let mut config = load_config(&resize_config_path).unwrap_or_default();
                 config.window_width = Some(logical_size.width.max(300.0));
-                config.window_height = Some(logical_size.height.max(736.0));
+                config.window_height = Some(logical_size.height.max(744.0));
                 if let Err(error) = save_config(&resize_config_path, &config) {
                     eprintln!("Failed to save window size: {error:#}");
                 }
