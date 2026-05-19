@@ -774,8 +774,8 @@ body.light .cover {{
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(var(--accent-rgb), 0.15);
   }}
   100% {{
-    transform: scale(1.03);
-    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.35), 0 0 35px rgba(var(--accent-rgb), 0.3);
+    transform: scale(1.06);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35), 0 0 40px rgba(var(--accent-rgb), 0.35);
   }}
 }}
 .title {{
