@@ -20,6 +20,7 @@ type AppResult<T> = Result<T, Box<dyn Error + Send + Sync>>;
 enum AppEvent {
     CatalogLoaded(String),
     SetWidth(f64),
+    SetTitle(String),
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -52,6 +53,7 @@ struct IpcMessage {
     window_width: Option<f64>,
     window_height: Option<f64>,
     target_width: Option<f64>,
+    title: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -105,7 +107,7 @@ fn main() -> AppResult<()> {
     let loader_config_path = config_path.clone();
     let resize_config_path = config_path.clone();
     let initial_width = startup_config.window_width.unwrap_or(1040.0).max(300.0);
-    let initial_height = startup_config.window_height.unwrap_or(760.0).max(760.0);
+    let initial_height = startup_config.window_height.unwrap_or(736.0).max(736.0);
 
     let event_loop = EventLoopBuilder::<AppEvent>::with_user_event().build();
     let loader_proxy = event_loop.create_proxy();
@@ -113,7 +115,7 @@ fn main() -> AppResult<()> {
     let window = WindowBuilder::new()
         .with_title("FMPLAY Radio")
         .with_inner_size(LogicalSize::new(initial_width, initial_height))
-        .with_min_inner_size(LogicalSize::new(300.0, 760.0))
+        .with_min_inner_size(LogicalSize::new(300.0, 736.0))
         .build(&event_loop)?;
 
     let webview = WebViewBuilder::new()
@@ -124,6 +126,11 @@ fn main() -> AppResult<()> {
                 if message.message_type == "set_width" {
                     if let Some(width) = message.target_width {
                         let _ = ipc_proxy.send_event(AppEvent::SetWidth(width));
+                    }
+                    return;
+                } else if message.message_type == "set_title" {
+                    if let Some(title) = message.title {
+                        let _ = ipc_proxy.send_event(AppEvent::SetTitle(title));
                     }
                     return;
                 }
@@ -162,8 +169,11 @@ fn main() -> AppResult<()> {
                 let logical_size = window.inner_size().to_logical::<f64>(window.scale_factor());
                 window.set_inner_size(LogicalSize::new(
                     target_width.clamp(300.0, 760.0),
-                    logical_size.height.max(760.0),
+                    logical_size.height.max(736.0),
                 ));
+            }
+            Event::UserEvent(AppEvent::SetTitle(title)) => {
+                window.set_title(&title);
             }
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
@@ -178,7 +188,7 @@ fn main() -> AppResult<()> {
                 let logical_size = size.to_logical::<f64>(window.scale_factor());
                 let mut config = load_config(&resize_config_path).unwrap_or_default();
                 config.window_width = Some(logical_size.width.max(300.0));
-                config.window_height = Some(logical_size.height.max(760.0));
+                config.window_height = Some(logical_size.height.max(736.0));
                 if let Err(error) = save_config(&resize_config_path, &config) {
                     eprintln!("Failed to save window size: {error:#}");
                 }
@@ -463,57 +473,66 @@ fn build_html(stations: &[Station], stations_json: &str, config: &AppConfig) -> 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FMPLAY Radio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {{
   color-scheme: dark;
-  --bg: #111312;
-  --panel: #191d1b;
-  --panel-2: #202622;
-  --text: #f0f4ef;
-  --muted: #9da89f;
-  --line: #2b322e;
-  --accent: #58d68d;
-  --accent-2: #f7c948;
-  --header: #151816;
-  --sidebar: #141715;
-  --card: rgba(255,255,255,.025);
-  --card-border: rgba(255,255,255,.05);
-  --cover-bg: #252b27;
-  --content-bg: radial-gradient(circle at top left, rgba(88,214,141,.12), transparent 340px), var(--bg);
-  --button-primary-text: #07120b;
-  --favorite-muted: rgba(157,168,159,.75);
-  --heart-muted: rgba(157,168,159,.35);
-  --modal-shadow: rgba(0,0,0,.35);
+  --bg: #090b0a;
+  --panel: #111413;
+  --panel-2: #181d1a;
+  --text: #f3f4f6;
+  --muted: #9ca3af;
+  --line: rgba(255, 255, 255, 0.05);
+  --accent: #10b981;
+  --accent-rgb: 16, 185, 129;
+  --accent-2: #f43f5e;
+  --header: #0d0f0e;
+  --sidebar: #0e1110;
+  --card: rgba(255, 255, 255, 0.015);
+  --card-border: rgba(255, 255, 255, 0.03);
+  --cover-bg: #1a1f1d;
+  --content-bg: radial-gradient(circle at top left, rgba(16, 185, 129, 0.08), transparent 400px), var(--bg);
+  --button-primary-text: #022c22;
+  --favorite-muted: rgba(156, 163, 175, 0.6);
+  --heart-muted: rgba(156, 163, 175, 0.25);
+  --modal-shadow: rgba(0, 0, 0, 0.6);
 }}
 body.light {{
   color-scheme: light;
-  --bg: #f5f7f4;
+  --bg: #f8fafc;
   --panel: #ffffff;
-  --panel-2: #edf3ee;
-  --text: #161a17;
-  --muted: #667067;
-  --line: #d6ded7;
-  --accent: #2bb96f;
-  --accent-2: #f0b429;
+  --panel-2: #f1f5f9;
+  --text: #0f172a;
+  --muted: #64748b;
+  --line: rgba(0, 0, 0, 0.06);
+  --accent: #059669;
+  --accent-rgb: 5, 150, 105;
+  --accent-2: #e11d48;
   --header: #ffffff;
-  --sidebar: #f7faf7;
-  --card: rgba(255,255,255,.8);
-  --card-border: rgba(31,42,35,.12);
-  --cover-bg: #e9eee9;
-  --content-bg: radial-gradient(circle at top left, rgba(43,185,111,.12), transparent 340px), var(--bg);
-  --button-primary-text: #06140b;
-  --favorite-muted: rgba(88,100,91,.75);
-  --heart-muted: rgba(88,100,91,.35);
-  --modal-shadow: rgba(22,26,23,.2);
+  --sidebar: #f8fafc;
+  --card: rgba(255, 255, 255, 0.8);
+  --card-border: rgba(0, 0, 0, 0.04);
+  --cover-bg: #e2e8f0;
+  --content-bg: radial-gradient(circle at top left, rgba(5, 150, 105, 0.06), transparent 400px), var(--bg);
+  --button-primary-text: #ffffff;
+  --favorite-muted: rgba(100, 116, 139, 0.7);
+  --heart-muted: rgba(100, 116, 139, 0.3);
+  --modal-shadow: rgba(15, 23, 42, 0.08);
 }}
-* {{ box-sizing: border-box; }}
+* {{
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}}
 body {{
   margin: 0;
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  letter-spacing: 0;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -0.01em;
 }}
 .shell {{
   display: grid;
@@ -523,39 +542,58 @@ body {{
 header {{
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 14px;
+  gap: 16px;
   align-items: center;
-  padding: 18px 22px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--line);
   background: var(--header);
+  backdrop-filter: blur(10px);
 }}
 .window-toggle {{
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
   min-height: 38px;
-  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--panel);
   color: var(--text);
-  padding: 0 14px;
-  font-size: 14px;
-  font-weight: 750;
+  padding: 0;
+  font-family: inherit;
+  font-size: 16px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }}
 .window-toggle:hover {{
   background: var(--panel-2);
+  border-color: rgba(var(--accent-rgb), 0.3);
+  transform: translateY(-0.5px);
+}}
+.window-toggle:active {{
+  transform: translateY(0.5px);
 }}
 .search {{
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--panel);
   color: var(--text);
-  padding: 10px 12px;
-  font-size: 15px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}}
+.search:focus {{
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
 }}
 main {{
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 300px;
+  grid-template-columns: minmax(240px, 1fr) 320px;
   min-height: 0;
   overflow-x: auto;
 }}
@@ -563,60 +601,95 @@ main {{
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   align-content: start;
-  gap: 8px;
-  overflow: auto;
+  gap: 10px;
+  overflow-y: auto;
   border-right: 1px solid var(--line);
-  padding: 12px;
+  padding: 16px;
   background: var(--sidebar);
+}}
+.sidebar::-webkit-scrollbar {{
+  width: 6px;
+}}
+.sidebar::-webkit-scrollbar-track {{
+  background: transparent;
+}}
+.sidebar::-webkit-scrollbar-thumb {{
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}}
+body.light .sidebar::-webkit-scrollbar-thumb {{
+  background: rgba(0, 0, 0, 0.08);
+}}
+.sidebar::-webkit-scrollbar-thumb:hover {{
+  background: rgba(var(--accent-rgb), 0.3);
 }}
 .station {{
   position: relative;
   width: 100%;
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
   align-items: center;
-  min-height: 62px;
-  padding: 10px 28px 10px 10px;
+  min-height: 64px;
+  padding: 10px 32px 10px 10px;
   border: 1px solid var(--card-border);
-  border-radius: 7px;
+  border-radius: 10px;
   color: var(--text);
   background: var(--card);
   text-align: left;
   cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }}
-.station:hover, .station.active {{ background: var(--panel-2); }}
+.station:hover {{
+  background: var(--panel-2);
+  border-color: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}}
+body.light .station:hover {{
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}}
 .station.active {{
-  border-color: rgba(88,214,141,.6);
-  box-shadow: inset 3px 0 0 var(--accent);
+  background: rgba(var(--accent-rgb), 0.06);
+  border-color: rgba(var(--accent-rgb), 0.3);
+  box-shadow: inset 4px 0 0 var(--accent);
 }}
 .station img {{
-  width: 40px;
-  height: 40px;
-  border-radius: 7px;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
   object-fit: cover;
   background: var(--cover-bg);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }}
 .station-name {{
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: normal;
+  font-family: inherit;
   font-size: 14px;
-  font-weight: 650;
-  line-height: 1.25;
-  max-height: 2.5em;
+  font-weight: 600;
+  line-height: 1.3;
+  max-height: 2.6em;
 }}
 .heart {{
   position: absolute;
-  right: 8px;
-  top: 6px;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--heart-muted);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1;
+  transition: all 0.2s ease;
+}}
+.station:hover .heart {{
+  color: var(--favorite-muted);
 }}
 .station.favorite .heart {{
-  color: var(--accent-2);
+  color: var(--accent-2) !important;
+  text-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
 }}
 .content {{
   min-width: 0;
@@ -627,185 +700,303 @@ main {{
 .now {{
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 20px;
+  gap: 24px;
   align-content: start;
   width: 100%;
-  max-width: 300px;
+  max-width: 320px;
   margin: 0 auto;
-  padding: 28px;
+  padding: 32px 20px;
 }}
 .cover {{
   width: 100%;
-  max-width: 240px;
+  max-width: 260px;
   aspect-ratio: 1;
-  border-radius: 8px;
+  border-radius: 16px;
   object-fit: cover;
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}}
+body.light .cover {{
+  border-color: rgba(0,0,0,0.05);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.1);
+}}
+.cover:hover {{
+  transform: scale(1.02);
 }}
 .title {{
-  margin: 0 0 10px;
-  font-size: 25px;
-  font-weight: 780;
-  line-height: 1.12;
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }}
 .subtitle {{
-  min-height: 24px;
+  min-height: 20px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }}
 .controls {{
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
-  margin-top: 22px;
+  margin-top: 24px;
+  width: 100%;
 }}
 button.control, .quality button {{
   min-width: 44px;
-  min-height: 38px;
+  min-height: 40px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 10px;
   background: var(--panel);
   color: var(--text);
-  font-weight: 700;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 13px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}}
+button.control:hover {{
+  background: var(--panel-2);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-0.5px);
+}}
+body.light button.control:hover {{
+  border-color: rgba(0, 0, 0, 0.08);
+}}
+button.control:active {{
+  transform: translateY(0.5px);
 }}
 button.control.primary {{
-  min-width: 64px;
-  background: var(--accent);
+  flex: 1;
+  height: 40px;
+  min-height: 40px;
+  background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
   color: var(--button-primary-text);
   border-color: transparent;
+  box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.35);
+  font-size: 14px;
+  font-weight: 700;
+}}
+button.control.primary:hover {{
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.5);
+}}
+button.control.primary.playing {{
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35) !important;
+}}
+button.control.primary.playing:hover {{
+  background: linear-gradient(135deg, #fb7185 0%, #be123c 100%) !important;
+  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.5) !important;
 }}
 button.control.settings-toggle {{
-  min-width: 52px;
-  font-size: 18px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 16px;
+  padding: 0;
 }}
 button.control.favorite-toggle {{
-  min-width: 52px;
-  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 18px;
+  padding: 0;
   color: var(--favorite-muted);
 }}
 button.control.favorite-toggle.active {{
-  color: #161204;
-  background: var(--accent-2);
+  color: #ffffff;
+  background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
   border-color: transparent;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
 }}
 .quality {{
-  display: inline-flex;
-  gap: 6px;
-  padding: 5px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
   border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  width: 100%;
+}}
+body.light .quality {{
+  background: rgba(0, 0, 0, 0.04);
+}}
+.quality button {{
+  flex: 1;
+  min-width: 0;
+  min-height: 32px;
+  border: 1px solid transparent;
   border-radius: 8px;
-  background: rgba(0,0,0,.12);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}}
+.quality button:hover {{
+  background: rgba(255, 255, 255, 0.05);
+}}
+body.light .quality button:hover {{
+  background: rgba(0, 0, 0, 0.03);
 }}
 .quality button.active {{
-  background: var(--accent-2);
-  color: #161204;
-  border-color: transparent;
+  background: var(--panel);
+  color: var(--accent);
+  border-color: var(--line);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }}
 .volume {{
-  width: 160px;
+  display: block;
+  width: 100%;
+  height: 16px;
   accent-color: var(--accent);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  outline: none;
+  margin-top: 16px;
 }}
 .now-track {{
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+}}
+body.light .now-track {{
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.04);
 }}
 .track-label {{
   color: var(--accent);
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }}
 .track-text {{
-  margin-top: 6px;
+  margin-top: 8px;
   color: var(--text);
   font-size: 14px;
-  font-weight: 650;
-  line-height: 1.35;
+  font-weight: 600;
+  line-height: 1.4;
 }}
 .track-text.muted {{
   color: var(--muted);
-  font-weight: 600;
+  font-weight: 500;
 }}
 footer {{
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 12px;
+  gap: 16px;
   align-items: center;
-  padding: 14px 18px;
+  padding: 14px 24px;
   border-top: 1px solid var(--line);
   background: var(--header);
   color: var(--muted);
   font-size: 13px;
+  font-weight: 500;
 }}
-audio {{ width: 280px; }}
+audio {{
+  display: none;
+}}
 .modal-backdrop {{
   position: fixed;
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 22px;
-  background: var(--modal-shadow);
-  z-index: 20;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  animation: backdropFadeIn 0.2s ease-out;
+}}
+@keyframes backdropFadeIn {{
+  from {{ opacity: 0; }}
+  to {{ opacity: 1; }}
 }}
 .modal-backdrop.hidden {{
   display: none;
 }}
 .settings-modal {{
-  width: min(300px, 100%);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
+  width: min(290px, 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(17, 20, 19, 0.92);
   color: var(--text);
-  padding: 16px;
-  box-shadow: 0 20px 48px var(--modal-shadow);
+  padding: 20px;
+  backdrop-filter: blur(25px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}}
+body.light .settings-modal {{
+  border-color: rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+}}
+@keyframes modalFadeIn {{
+  from {{ transform: scale(0.95); opacity: 0; }}
+  to {{ transform: scale(1); opacity: 1; }}
 }}
 .settings-header {{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 16px;
+  margin-bottom: 20px;
 }}
 .settings-title {{
   font-size: 18px;
   font-weight: 800;
+  letter-spacing: -0.01em;
 }}
 .icon-button {{
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 50%;
   background: var(--panel-2);
   color: var(--text);
-  font-size: 22px;
-  line-height: 1;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}}
+.icon-button:hover {{
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.3);
+  transform: scale(1.05);
 }}
 .settings-section {{
   display: grid;
   gap: 8px;
-  margin-top: 14px;
+  margin-top: 18px;
 }}
 .settings-label {{
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }}
-.theme-select {{
-  width: 100%;
-  min-height: 38px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--panel);
-  color: var(--text);
-  padding: 8px 10px;
-  font: inherit;
-}}
+/* Deleted .theme-select since we use premium segmented controls */
 @media (max-width: 700px) {{
   footer {{ grid-template-columns: 1fr; }}
 }}
@@ -833,7 +1024,7 @@ audio {{ width: 280px; }}
 <body>
 <div class="shell">
   <header>
-    <button id="width-toggle" class="window-toggle">Свернуть</button>
+    <button id="width-toggle" class="window-toggle" title="Свернуть боковую панель">◀</button>
     <input id="search" class="search" type="search" placeholder="Поиск станции">
   </header>
   <main>
@@ -846,11 +1037,10 @@ audio {{ width: 280px; }}
           <div class="subtitle" id="subtitle">Выберите станцию</div>
           <div class="controls">
             <button id="play" class="control primary">Play</button>
-            <button id="stop" class="control">Stop</button>
             <button id="settings" class="control settings-toggle" title="Настройки">⚙</button>
             <button id="favorite" class="control favorite-toggle" title="Избранное">♥</button>
-            <input id="volume" class="volume" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
+          <input id="volume" class="volume" type="range" min="0" max="1" step="0.01" value="0.9">
           <div class="now-track">
             <div class="track-label">Текущий трек</div>
             <div id="track" class="track-text muted">Выберите станцию</div>
@@ -871,16 +1061,16 @@ audio {{ width: 280px; }}
       <button id="settings-close" class="icon-button" title="Закрыть">×</button>
     </div>
     <div class="settings-section">
-      <div class="settings-label">Качество</div>
+      <span class="settings-label">Качество потока</span>
       <div id="quality" class="quality" aria-label="Качество потока"></div>
     </div>
-    <label class="settings-section">
-      <span class="settings-label">Тема</span>
-      <select id="theme-select" class="theme-select">
-        <option value="dark">Темная</option>
-        <option value="light">Светлая</option>
-      </select>
-    </label>
+    <div class="settings-section">
+      <span class="settings-label">Тема оформления</span>
+      <div id="theme-segmented" class="quality" aria-label="Тема оформления">
+        <button class="theme-btn" data-theme="dark">Темная</button>
+        <button class="theme-btn" data-theme="light">Светлая</button>
+      </div>
+    </div>
   </div>
 </div>
 <script>
@@ -905,11 +1095,28 @@ var widthToggle = document.getElementById("width-toggle");
 var settingsButton = document.getElementById("settings");
 var settingsModal = document.getElementById("settings-modal");
 var settingsClose = document.getElementById("settings-close");
-var themeSelect = document.getElementById("theme-select");
+var themeSegmented = document.getElementById("theme-segmented");
 var track = document.getElementById("track");
 var metaTimer = null;
 var metaToken = 0;
 var lastMetaId = null;
+
+function updateDocumentTitle(stationName, trackName) {{
+  var newTitle = "FMPLAY Radio";
+  if (stationName) {{
+    if (trackName && trackName.indexOf("Выберите станцию") === -1 && trackName.indexOf("Обновление") === -1 && trackName.indexOf("Не удалось") === -1) {{
+      newTitle = stationName + " — " + trackName + " | FMPLAY";
+    }} else {{
+      newTitle = stationName + " | FMPLAY";
+    }}
+  }}
+  document.title = newTitle;
+  try {{
+    if (window.ipc && window.ipc.postMessage) {{
+      window.ipc.postMessage(JSON.stringify({{ type: "set_title", title: newTitle }}));
+    }}
+  }} catch (error) {{}}
+}}
 
 function readSetting(key, fallback) {{
   try {{
@@ -972,7 +1179,15 @@ function normalizeTheme(theme) {{
 function applyTheme(theme) {{
   currentTheme = normalizeTheme(theme);
   document.body.className = currentTheme === "light" ? "light" : "";
-  themeSelect.value = currentTheme;
+  var buttons = themeSegmented.getElementsByClassName("theme-btn");
+  for (var index = 0; index < buttons.length; index += 1) {{
+    var btn = buttons[index];
+    if (btn.getAttribute("data-theme") === currentTheme) {{
+      btn.className = "theme-btn active";
+    }} else {{
+      btn.className = "theme-btn";
+    }}
+  }}
 }}
 
 function openSettings() {{
@@ -993,7 +1208,9 @@ function postToggleWidth() {{
 }}
 
 function updateWidthToggle() {{
-  widthToggle.textContent = window.innerWidth <= 540 ? "Развернуть" : "Свернуть";
+  var collapsed = window.innerWidth <= 540;
+  widthToggle.textContent = collapsed ? "▶" : "◀";
+  widthToggle.title = collapsed ? "Развернуть боковую панель" : "Свернуть боковую панель";
 }}
 
 function toggleFavorite(station) {{
@@ -1113,6 +1330,7 @@ function selectStation(station, shouldPlay) {{
   var stream = streamFor(station);
   title.textContent = station.name;
   subtitle.textContent = station.site || "fmplay.ru";
+  updateDocumentTitle(station.name, "");
   cover.src = station.logo;
   audio.src = stream.url;
   renderQuality();
@@ -1166,6 +1384,9 @@ function pollMetadata(token) {{
       if (artist && songTitle) text = artist + " - " + songTitle;
       else text = artist || songTitle;
       setTrackText(text || "Сейчас нет данных о треке", !text);
+      if (current && current.id === stationId) {{
+        updateDocumentTitle(current.name, text);
+      }}
     }})
     .catch(function() {{
       if (token === metaToken) setTrackText("Не удалось обновить текущий трек", true);
@@ -1174,6 +1395,10 @@ function pollMetadata(token) {{
 
 function play() {{
   if (!current && stations.length > 0) selectStation(stations[0], false);
+  if (current && !audio.src) {{
+    var stream = streamFor(current);
+    audio.src = stream.url;
+  }}
   audio.play()
     .then(function() {{ status.textContent = "Играет: " + current.name; }})
     .catch(function(error) {{ status.textContent = "Не удалось запустить поток: " + error.message; }});
@@ -1184,6 +1409,28 @@ function stop() {{
   audio.removeAttribute("src");
   audio.load();
   status.textContent = current ? "Остановлено: " + current.name : "Остановлено";
+  updateDocumentTitle(current ? current.name : "", "");
+}}
+
+function togglePlay() {{
+  if (audio.paused || !audio.src) {{
+    play();
+  }} else {{
+    stop();
+  }}
+}}
+
+function updatePlayButtonState(isPlaying) {{
+  var playBtn = document.getElementById("play");
+  if (playBtn) {{
+    if (isPlaying) {{
+      playBtn.textContent = "Stop";
+      playBtn.className = "control primary playing";
+    }} else {{
+      playBtn.textContent = "Play";
+      playBtn.className = "control primary";
+    }}
+  }}
 }}
 
 function filteredStations() {{
@@ -1202,8 +1449,7 @@ function findStationById(id) {{
   return null;
 }}
 
-document.getElementById("play").addEventListener("click", play);
-document.getElementById("stop").addEventListener("click", stop);
+document.getElementById("play").addEventListener("click", togglePlay);
 favoriteButton.addEventListener("click", function() {{ toggleFavorite(current); }});
 widthToggle.addEventListener("click", postToggleWidth);
 settingsButton.addEventListener("click", openSettings);
@@ -1211,10 +1457,13 @@ settingsClose.addEventListener("click", closeSettings);
 settingsModal.addEventListener("click", function(event) {{
   if (event.target === settingsModal) closeSettings();
 }});
-themeSelect.addEventListener("change", function(event) {{
-  applyTheme(event.target.value);
-  saveAppConfig();
-}});
+var themeBtns = themeSegmented.getElementsByClassName("theme-btn");
+for (var btnIndex = 0; btnIndex < themeBtns.length; btnIndex += 1) {{
+  themeBtns[btnIndex].addEventListener("click", function(event) {{
+    applyTheme(event.target.getAttribute("data-theme"));
+    saveAppConfig();
+  }});
+}}
 document.addEventListener("keydown", function(event) {{
   if (event.key === "Escape") closeSettings();
 }});
@@ -1232,6 +1481,11 @@ applyTheme(currentTheme);
 audio.volume = isFinite(savedVolume) ? Math.min(1, Math.max(0, savedVolume)) : 0.9;
 document.getElementById("volume").value = String(audio.volume);
 updateWindowSize();
+audio.addEventListener("play", function() {{ updatePlayButtonState(true); }});
+audio.addEventListener("playing", function() {{ updatePlayButtonState(true); }});
+audio.addEventListener("pause", function() {{ updatePlayButtonState(false); }});
+audio.addEventListener("ended", function() {{ updatePlayButtonState(false); }});
+audio.addEventListener("emptied", function() {{ updatePlayButtonState(false); }});
 audio.addEventListener("waiting", function() {{ status.textContent = "Буферизация..."; }});
 audio.addEventListener("error", function() {{ status.textContent = "Ошибка аудиопотока. Попробуйте другое качество или станцию."; }});
 render();
