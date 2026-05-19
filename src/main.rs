@@ -709,7 +709,7 @@ body.light .station:hover {{
 }}
 .cover {{
   width: 100%;
-  max-width: 260px;
+  max-width: 100%;
   aspect-ratio: 1;
   border-radius: 16px;
   object-fit: cover;
