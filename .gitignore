@@ -1,2 +1,7 @@
-/target
+target/
+*.app/
+
+.kilo/
+
+*.log
 .DS_Store

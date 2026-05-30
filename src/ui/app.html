@@ -1,0 +1,1118 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FMPLAY Radio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+color-scheme: dark;
+--bg: #090b0a;
+--panel: #111413;
+--panel-2: #181d1a;
+--text: #f3f4f6;
+--muted: #9ca3af;
+--line: rgba(255, 255, 255, 0.05);
+--accent: #10b981;
+--accent-rgb: 16, 185, 129;
+--accent-2: #f43f5e;
+--header: #0d0f0e;
+--sidebar: #0e1110;
+--card: rgba(255, 255, 255, 0.015);
+--card-border: rgba(255, 255, 255, 0.03);
+--cover-bg: #1a1f1d;
+--content-bg: radial-gradient(circle at top left, rgba(16, 185, 129, 0.08), transparent 400px), var(--bg);
+--button-primary-text: #022c22;
+--favorite-muted: rgba(156, 163, 175, 0.6);
+--heart-muted: rgba(156, 163, 175, 0.25);
+--modal-shadow: rgba(0, 0, 0, 0.6);
+}
+body.light {
+color-scheme: light;
+--bg: #f8fafc;
+--panel: #ffffff;
+--panel-2: #f1f5f9;
+--text: #0f172a;
+--muted: #64748b;
+--line: rgba(0, 0, 0, 0.06);
+--accent: #059669;
+--accent-rgb: 5, 150, 105;
+--accent-2: #e11d48;
+--header: #ffffff;
+--sidebar: #f8fafc;
+--card: rgba(255, 255, 255, 0.8);
+--card-border: rgba(0, 0, 0, 0.04);
+--cover-bg: #e2e8f0;
+--content-bg: radial-gradient(circle at top left, rgba(5, 150, 105, 0.06), transparent 400px), var(--bg);
+--button-primary-text: #ffffff;
+--favorite-muted: rgba(100, 116, 139, 0.7);
+--heart-muted: rgba(100, 116, 139, 0.3);
+--modal-shadow: rgba(15, 23, 42, 0.08);
+}
+* {
+box-sizing: border-box;
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+body {
+margin: 0;
+min-height: 100vh;
+background: var(--bg);
+color: var(--text);
+font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+letter-spacing: -0.01em;
+}
+.shell {
+display: grid;
+grid-template-rows: auto 1fr auto;
+height: 100vh;
+}
+header {
+display: grid;
+grid-template-columns: auto minmax(0, 1fr);
+gap: 16px;
+align-items: center;
+padding: 16px 24px;
+border-bottom: 1px solid var(--line);
+background: var(--header);
+backdrop-filter: blur(10px);
+}
+.window-toggle {
+width: 38px;
+height: 38px;
+min-width: 38px;
+min-height: 38px;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+border: 1px solid var(--line);
+border-radius: 8px;
+background: var(--panel);
+color: var(--text);
+padding: 0;
+font-family: inherit;
+font-size: 16px;
+cursor: pointer;
+transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.window-toggle:hover {
+background: var(--panel-2);
+border-color: rgba(var(--accent-rgb), 0.3);
+transform: translateY(-0.5px);
+}
+.window-toggle:active {
+transform: translateY(0.5px);
+}
+.search {
+width: 100%;
+border: 1px solid var(--line);
+border-radius: 8px;
+background: var(--panel);
+color: var(--text);
+padding: 10px 14px;
+font-family: inherit;
+font-size: 14px;
+transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.search:focus {
+outline: none;
+border-color: var(--accent);
+box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
+}
+main {
+display: grid;
+grid-template-columns: 320px minmax(240px, 1fr);
+min-height: 0;
+overflow-x: auto;
+}
+.sidebar {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+align-content: start;
+gap: 10px;
+overflow-y: auto;
+border-left: 1px solid var(--line);
+padding: 16px;
+background: var(--sidebar);
+}
+.sidebar::-webkit-scrollbar {
+width: 6px;
+}
+.sidebar::-webkit-scrollbar-track {
+background: transparent;
+}
+.sidebar::-webkit-scrollbar-thumb {
+background: rgba(255, 255, 255, 0.08);
+border-radius: 10px;
+}
+body.light .sidebar::-webkit-scrollbar-thumb {
+background: rgba(0, 0, 0, 0.08);
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+background: rgba(var(--accent-rgb), 0.3);
+}
+.station {
+position: relative;
+width: 100%;
+display: grid;
+grid-template-columns: 44px minmax(0, 1fr);
+gap: 12px;
+align-items: center;
+min-height: 64px;
+padding: 10px 32px 10px 10px;
+border: 1px solid var(--card-border);
+border-radius: 10px;
+color: var(--text);
+background: var(--card);
+text-align: left;
+cursor: pointer;
+transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.station:hover {
+background: var(--panel-2);
+border-color: rgba(255, 255, 255, 0.08);
+transform: translateY(-2px);
+box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+body.light .station:hover {
+border-color: rgba(0, 0, 0, 0.08);
+box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+}
+.station.active {
+background: rgba(var(--accent-rgb), 0.06);
+border-color: rgba(var(--accent-rgb), 0.3);
+box-shadow: inset 4px 0 0 var(--accent);
+}
+.station img {
+width: 44px;
+height: 44px;
+border-radius: 8px;
+object-fit: cover;
+background: var(--cover-bg);
+box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.station-name {
+display: block;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: normal;
+font-family: inherit;
+font-size: 14px;
+font-weight: 600;
+line-height: 1.3;
+max-height: 2.6em;
+}
+.heart {
+position: absolute;
+right: 12px;
+top: 50%;
+transform: translateY(-50%);
+color: var(--heart-muted);
+font-size: 16px;
+line-height: 1;
+transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.station:hover .heart {
+color: var(--favorite-muted);
+}
+.station.favorite .heart {
+color: var(--accent-2) !important;
+text-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+}
+.playing-eq {
+display: none;
+align-items: flex-end;
+gap: 2px;
+width: 14px;
+height: 12px;
+position: absolute;
+right: 32px;
+top: 50%;
+transform: translateY(-50%);
+}
+.playing-eq span {
+width: 2px;
+height: 100%;
+background-color: var(--accent);
+border-radius: 1px;
+transform-origin: bottom;
+animation: eq-bounce 0.8s ease-in-out infinite alternate;
+}
+.playing-eq span:nth-child(1) {
+animation-delay: -0.2s;
+}
+.playing-eq span:nth-child(2) {
+animation-delay: -0.4s;
+}
+.playing-eq span:nth-child(3) {
+animation-delay: -0.1s;
+}
+@keyframes eq-bounce {
+0% { transform: scaleY(0.15); }
+100% { transform: scaleY(1.0); }
+}
+.station.active.playing .playing-eq {
+display: inline-flex;
+}
+.content {
+min-width: 0;
+display: grid;
+grid-template-rows: minmax(0, 1fr) auto;
+background: var(--content-bg);
+}
+.now {
+display: grid;
+grid-template-rows: auto 1fr;
+gap: 24px;
+align-content: start;
+width: 100%;
+max-width: 320px;
+margin: 0 auto;
+padding: 32px 20px;
+}
+.cover {
+width: 100%;
+max-width: 100%;
+aspect-ratio: 1;
+border-radius: 16px;
+object-fit: cover;
+background: var(--panel);
+border: 1px solid rgba(255, 255, 255, 0.05);
+box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+body.light .cover {
+border-color: rgba(0,0,0,0.05);
+box-shadow: 0 16px 36px rgba(0, 0, 0, 0.1);
+}
+.cover:hover {
+transform: scale(1.02);
+}
+.cover.playing {
+box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(var(--accent-rgb), 0.35);
+animation: cover-glow 4s ease-in-out infinite alternate;
+}
+@keyframes cover-glow {
+0% {
+transform: scale(1.01);
+box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(var(--accent-rgb), 0.3);
+}
+100% {
+transform: scale(1.06);
+box-shadow: 0 16px 44px rgba(0, 0, 0, 0.35), 0 0 60px rgba(var(--accent-rgb), 0.7);
+}
+}
+.title {
+margin: 0;
+font-size: 24px;
+font-weight: 800;
+line-height: 1.15;
+letter-spacing: -0.02em;
+}
+.controls {
+display: flex;
+gap: 12px;
+align-items: center;
+margin-top: 24px;
+width: 100%;
+}
+button.control, .quality button {
+min-width: 44px;
+min-height: 40px;
+border: 1px solid var(--line);
+border-radius: 10px;
+background: var(--panel);
+color: var(--text);
+font-family: inherit;
+font-weight: 600;
+font-size: 13px;
+cursor: pointer;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+button.control:hover {
+background: var(--panel-2);
+border-color: rgba(255, 255, 255, 0.1);
+transform: translateY(-1px);
+}
+body.light button.control:hover {
+border-color: rgba(0, 0, 0, 0.08);
+}
+button.control:active {
+transform: translateY(0.5px);
+}
+button.control.primary {
+flex: 1;
+height: 40px;
+min-height: 40px;
+background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
+color: var(--button-primary-text);
+border-color: transparent;
+box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.35);
+font-size: 14px;
+font-weight: 700;
+}
+button.control.primary:hover {
+background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.5);
+}
+button.control.primary.playing {
+background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+color: #ffffff !important;
+box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35) !important;
+}
+button.control.primary.playing:hover {
+background: linear-gradient(135deg, #fb7185 0%, #be123c 100%) !important;
+box-shadow: 0 6px 20px rgba(225, 29, 72, 0.5) !important;
+}
+button.control.settings-toggle {
+width: 40px;
+height: 40px;
+min-width: 40px;
+min-height: 40px;
+font-size: 16px;
+padding: 0;
+}
+button.control.favorite-toggle {
+width: 40px;
+height: 40px;
+min-width: 40px;
+min-height: 40px;
+font-size: 18px;
+padding: 0;
+color: var(--favorite-muted);
+}
+button.control.favorite-toggle.active {
+color: #ffffff;
+background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+border-color: transparent;
+box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+}
+.quality {
+display: flex;
+gap: 4px;
+padding: 4px;
+border: 1px solid var(--line);
+border-radius: 10px;
+background: rgba(0, 0, 0, 0.2);
+width: 100%;
+}
+body.light .quality {
+background: rgba(0, 0, 0, 0.04);
+}
+.quality button {
+flex: 1;
+min-width: 0;
+min-height: 32px;
+border: 1px solid transparent;
+border-radius: 8px;
+background: transparent;
+color: var(--text);
+font-family: inherit;
+font-size: 12px;
+font-weight: 700;
+cursor: pointer;
+transition: all 0.15s ease;
+}
+.quality button:hover {
+background: rgba(255, 255, 255, 0.05);
+}
+body.light .quality button:hover {
+background: rgba(0, 0, 0, 0.03);
+}
+.quality button.active {
+background: var(--panel);
+color: var(--accent);
+border-color: var(--line);
+box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.volume {
+display: block;
+width: 100%;
+height: 16px;
+accent-color: var(--accent);
+cursor: pointer;
+background: transparent;
+border: none;
+outline: none;
+margin-top: 16px;
+}
+.now-track {
+margin-top: 24px;
+padding: 16px;
+border-radius: 12px;
+background: rgba(255, 255, 255, 0.02);
+border: 1px solid rgba(255, 255, 255, 0.04);
+backdrop-filter: blur(10px);
+}
+body.light .now-track {
+background: rgba(0, 0, 0, 0.02);
+border-color: rgba(0, 0, 0, 0.04);
+}
+.track-label {
+color: var(--accent);
+font-size: 11px;
+font-weight: 800;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+.track-text {
+margin-top: 8px;
+color: var(--text);
+font-size: 14px;
+font-weight: 600;
+line-height: 1.4;
+}
+.track-text.muted {
+color: var(--muted);
+font-weight: 500;
+}
+footer {
+display: grid;
+grid-template-columns: 1fr auto;
+gap: 16px;
+align-items: center;
+padding: 14px 24px;
+border-top: 1px solid var(--line);
+background: var(--header);
+color: var(--muted);
+font-size: 13px;
+font-weight: 500;
+}
+audio {
+display: none;
+}
+.modal-backdrop {
+position: fixed;
+inset: 0;
+display: grid;
+place-items: center;
+padding: 24px;
+background: rgba(0, 0, 0, 0.6);
+backdrop-filter: blur(8px);
+z-index: 100;
+animation: backdropFadeIn 0.2s ease-out;
+}
+@keyframes backdropFadeIn {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+.modal-backdrop.hidden {
+display: none;
+}
+.settings-modal {
+width: min(290px, 100%);
+border: 1px solid rgba(255, 255, 255, 0.08);
+border-radius: 16px;
+background: rgba(17, 20, 19, 0.92);
+color: var(--text);
+padding: 20px;
+backdrop-filter: blur(25px);
+box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+body.light .settings-modal {
+border-color: rgba(0, 0, 0, 0.08);
+background: rgba(255, 255, 255, 0.92);
+box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+}
+@keyframes modalFadeIn {
+from { transform: scale(0.95); opacity: 0; }
+to { transform: scale(1); opacity: 1; }
+}
+.settings-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 16px;
+margin-bottom: 20px;
+}
+.settings-title {
+font-size: 18px;
+font-weight: 800;
+letter-spacing: -0.01em;
+}
+.icon-button {
+width: 28px;
+height: 28px;
+border: 1px solid var(--line);
+border-radius: 50%;
+background: var(--panel-2);
+color: var(--text);
+font-size: 16px;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.icon-button:hover {
+background: rgba(244, 63, 94, 0.2);
+color: #f43f5e;
+border-color: rgba(244, 63, 94, 0.3);
+transform: scale(1.05);
+}
+.settings-section {
+display: grid;
+gap: 8px;
+margin-top: 18px;
+}
+.settings-label {
+color: var(--muted);
+font-size: 11px;
+font-weight: 800;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+@media (max-width: 700px) {
+footer {
+grid-template-columns: 1fr;
+}
+}
+@media (max-width: 540px) {
+header {
+grid-template-columns: 1fr;
+}
+.search {
+display: none;
+}
+main {
+grid-template-columns: 300px;
+justify-content: center;
+}
+.sidebar {
+display: none;
+}
+.content {
+border-left: 1px solid var(--line);
+border-right: 1px solid var(--line);
+}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+<input id="search" class="search" type="search" placeholder="Поиск станции">
+<button id="width-toggle" class="window-toggle" title="Свернуть боковую панель">▶</button>
+</header>
+<main>
+<section class="content">
+<div class="now">
+<img id="cover" class="cover" alt="">
+<div>
+<div class="title" id="title">Выберите станцию</div>
+<div class="controls">
+<button id="play" class="control primary">Play</button>
+<button id="settings" class="control settings-toggle" title="Настройки">⚙</button>
+<button id="favorite" class="control favorite-toggle" title="Избранное">♥</button>
+</div>
+<input id="volume" class="volume" type="range" min="0" max="1" step="0.01" value="0.9">
+<div class="now-track">
+<div class="track-label">Текущий трек</div>
+<div id="track" class="track-text muted">Выберите станцию</div>
+</div>
+</div>
+</div>
+<footer>
+<span id="status">Каталог загружен: {count} станций</span>
+<audio id="audio" crossorigin="anonymous">
+</footer>
+</section>
+<aside id="list" class="sidebar">{list_html}</aside>
+</main>
+</div>
+<div id="settings-modal" class="modal-backdrop hidden">
+<div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+<div class="settings-header">
+<div id="settings-title" class="settings-title">Настройки</div>
+<button id="settings-close" class="icon-button" title="Закрыть">×</button>
+</div>
+<div class="settings-section">
+<span class="settings-label">Качество потока</span>
+<div id="quality" class="quality" aria-label="Качество потока"></div>
+</div>
+<div class="settings-section">
+<span class="settings-label">Тема оформления</span>
+<div id="theme-segmented" class="quality" aria-label="Тема оформления">
+<button class="theme-btn" data-theme="dark">Темная</button>
+<button class="theme-btn" data-theme="light">Светлая</button>
+</div>
+</div>
+<div class="settings-section">
+<span class="settings-label">Список станций</span>
+<div id="favorites-segmented" class="quality" aria-label="Фильтрация списка">
+<button class="fav-filter-btn" data-filter="all">Все станции</button>
+<button class="fav-filter-btn" data-filter="favorites">Только избранное</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+var stations = {stations_json};
+var initialConfig = {config_json};
+var current = null;
+var currentQuality = Number(readSetting("quality", String(initialConfig.quality || 48)));
+var currentTheme = readSetting("theme", initialConfig.theme || "dark");
+var favorites = parseFavorites(readSetting("favorites", JSON.stringify(initialConfig.favorites || [])));
+var savedLastStation = readSetting("last_station", initialConfig.last_station || "");
+var savedVolume = Number(readSetting("volume", String(initialConfig.volume || 0.9)));
+var onlyFavorites = readSetting("only_favorites", String(initialConfig.only_favorites || false)) === "true";
+var list = document.getElementById("list");
+var search = document.getElementById("search");
+var audio = document.getElementById("audio");
+var cover = document.getElementById("cover");
+var title = document.getElementById("title");
+var status = document.getElementById("status");
+var quality = document.getElementById("quality");
+var favoriteButton = document.getElementById("favorite");
+var widthToggle = document.getElementById("width-toggle");
+var settingsButton = document.getElementById("settings");
+var settingsModal = document.getElementById("settings-modal");
+var settingsClose = document.getElementById("settings-close");
+var themeSegmented = document.getElementById("theme-segmented");
+var track = document.getElementById("track");
+var metaTimer = null;
+var metaToken = 0;
+var lastMetaId = null;
+function updateDocumentTitle(stationName, trackName) {
+var newTitle = "FMPLAY Radio";
+if (stationName) {
+if (trackName && trackName.indexOf("Выберите станцию") === -1 && trackName.indexOf("Обновление") === -1 && trackName.indexOf("Не удалось") === -1) {
+newTitle = stationName + " — " + trackName + " | FMPLAY";
+} else {
+newTitle = stationName + " | FMPLAY";
+}
+}
+document.title = newTitle;
+try {
+if (window.ipc && window.ipc.postMessage) {
+window.ipc.postMessage(JSON.stringify({ type: "set_title", title: newTitle }));
+}
+} catch (error) {}
+}
+function readSetting(key, fallback) {
+try {
+return window.localStorage ? window.localStorage.getItem(key) || fallback : fallback;
+} catch (error) {
+return fallback;
+}
+}
+function writeSetting(key, value) {
+try {
+if (window.localStorage) window.localStorage.setItem(key, value);
+} catch (error) {}
+}
+function parseFavorites(value) {
+try {
+var parsed = JSON.parse(value);
+return Array.isArray(parsed) ? parsed : [];
+} catch (error) {
+return [];
+}
+}
+function isFavorite(station) {
+return favorites.indexOf(station.id) !== -1;
+}
+function saveFavorites() {
+saveAppConfig();
+}
+function saveAppConfig() {
+var payload = {
+type: "config",
+favorites: favorites,
+last_station: current ? current.id : savedLastStation,
+quality: currentQuality,
+volume: audio.volume,
+theme: currentTheme,
+only_favorites: onlyFavorites,
+window_width: window.innerWidth,
+window_height: window.innerHeight
+};
+writeSetting("favorites", JSON.stringify(favorites));
+writeSetting("last_station", payload.last_station || "");
+writeSetting("quality", String(currentQuality));
+writeSetting("volume", String(audio.volume));
+writeSetting("theme", currentTheme);
+writeSetting("only_favorites", String(onlyFavorites));
+try {
+if (window.ipc && window.ipc.postMessage) {
+window.ipc.postMessage(JSON.stringify(payload));
+}
+} catch (error) {}
+}
+function normalizeTheme(theme) {
+return theme === "light" ? "light" : "dark";
+}
+function applyTheme(theme) {
+currentTheme = normalizeTheme(theme);
+document.body.className = currentTheme === "light" ? "light" : "";
+var buttons = themeSegmented.getElementsByClassName("theme-btn");
+for (var index = 0; index < buttons.length; index += 1) {
+var btn = buttons[index];
+if (btn.getAttribute("data-theme") === currentTheme) {
+btn.className = "theme-btn active";
+} else {
+btn.className = "theme-btn";
+}
+}
+}
+function applyFavoritesFilter(onlyFav) {
+onlyFavorites = onlyFav;
+var buttons = document.getElementById("favorites-segmented").getElementsByClassName("fav-filter-btn");
+for (var index = 0; index < buttons.length; index += 1) {
+var btn = buttons[index];
+var isFavBtn = btn.getAttribute("data-filter") === "favorites";
+if (isFavBtn === onlyFavorites) {
+btn.className = "fav-filter-btn active";
+} else {
+btn.className = "fav-filter-btn";
+}
+}
+render(filteredStations());
+}
+function openSettings() {
+settingsModal.className = "modal-backdrop";
+}
+function closeSettings() {
+settingsModal.className = "modal-backdrop hidden";
+}
+function postToggleWidth() {
+try {
+if (window.ipc && window.ipc.postMessage) {
+var targetWidth = window.innerWidth <= 540 ? 760 : 300;
+window.ipc.postMessage(JSON.stringify({ type: "set_width", target_width: targetWidth }));
+}
+} catch (error) {}
+}
+function updateWidthToggle() {
+var collapsed = window.innerWidth <= 540;
+widthToggle.textContent = collapsed ? "◀" : "▶";
+widthToggle.title = collapsed ? "Развернуть боковую панель" : "Свернуть боковую панель";
+}
+function toggleFavorite(station) {
+if (!station) return;
+var index = favorites.indexOf(station.id);
+if (index === -1) {
+favorites.push(station.id);
+status.textContent = "В избранном: " + station.name;
+} else {
+favorites.splice(index, 1);
+status.textContent = "Удалено из избранного: " + station.name;
+}
+saveFavorites();
+updateFavoriteButton();
+render(filteredStations());
+}
+function updateFavoriteButton() {
+if (!current) {
+favoriteButton.className = "control favorite-toggle";
+favoriteButton.title = "Избранное";
+return;
+}
+var active = isFavorite(current);
+favoriteButton.className = "control favorite-toggle" + (active ? " active" : "");
+favoriteButton.title = active ? "Убрать из избранного" : "Добавить в избранное";
+}
+function sortedStations(items) {
+return items.slice().sort(function(a, b) {
+var favA = isFavorite(a) ? 1 : 0;
+var favB = isFavorite(b) ? 1 : 0;
+if (favA !== favB) return favB - favA;
+return a.name.localeCompare(b.name, "ru", { sensitivity: "base" });
+});
+}
+function streamFor(station) {
+var hi = null;
+for (var index = 0; index < station.streams.length; index += 1) {
+if (station.streams[index].bitrate === currentQuality) return station.streams[index];
+if (station.streams[index].bitrate === 48) hi = station.streams[index];
+}
+return hi || station.streams[station.streams.length - 1];
+}
+function render(items) {
+items = sortedStations(items || stations);
+list.innerHTML = "";
+var isCurrentlyPlaying = !audio.paused && audio.src;
+for (var index = 0; index < items.length; index += 1) {
+var station = items[index];
+var button = document.createElement("button");
+var img = document.createElement("img");
+var text = document.createElement("span");
+var name = document.createElement("span");
+var heart = document.createElement("span");
+var eq = document.createElement("span");
+eq.className = "playing-eq";
+var bar1 = document.createElement("span");
+var bar2 = document.createElement("span");
+var bar3 = document.createElement("span");
+eq.appendChild(bar1);
+eq.appendChild(bar2);
+eq.appendChild(bar3);
+button.className = "station" + (current && current.id === station.id ? " active" : "") + (current && current.id === station.id && isCurrentlyPlaying ? " playing" : "") + (isFavorite(station) ? " favorite" : "");
+img.src = station.logo;
+img.alt = "";
+name.className = "station-name";
+name.textContent = station.name;
+heart.className = "heart";
+heart.textContent = "♥";
+text.appendChild(name);
+text.appendChild(heart);
+button.appendChild(img);
+button.appendChild(text);
+button.appendChild(eq);
+button.addEventListener("click", stationClickHandler(station));
+button.addEventListener("contextmenu", stationFavoriteHandler(station));
+list.appendChild(button);
+}
+}
+function stationClickHandler(station) {
+return function() {
+selectStation(station, true);
+};
+}
+function stationFavoriteHandler(station) {
+return function(event) {
+event.preventDefault();
+toggleFavorite(station);
+};
+}
+function renderQuality() {
+quality.innerHTML = "";
+if (!current) return;
+for (var index = 0; index < current.streams.length; index += 1) {
+var stream = current.streams[index];
+var button = document.createElement("button");
+button.textContent = stream.label;
+button.className = stream.bitrate === streamFor(current).bitrate ? "active" : "";
+button.title = stream.bitrate + " кбит/с";
+button.addEventListener("click", qualityClickHandler(stream));
+quality.appendChild(button);
+}
+}
+function qualityClickHandler(stream) {
+return function() {
+currentQuality = stream.bitrate;
+saveAppConfig();
+selectStation(current, !audio.paused);
+};
+}
+function selectStation(station, shouldPlay) {
+current = station;
+savedLastStation = station.id;
+metaToken += 1;
+lastMetaId = null;
+var stream = streamFor(station);
+title.textContent = station.name;
+updateDocumentTitle(station.name, "");
+cover.src = station.logo;
+audio.src = stream.url;
+renderQuality();
+updateFavoriteButton();
+render(filteredStations());
+status.textContent = "Готово: " + station.name;
+startMetadataPolling();
+saveAppConfig();
+if (shouldPlay) play();
+}
+function stripMetaText(text) {
+    return text.replace(/https?:\/\/\S+/gi, '').replace(/\b\w[\w.\/-]*\.\w+\/?\S*/gi, '').replace(/\s{2,}/g, ' ').trim();
+}
+function setTrackText(text, muted) {
+    track.textContent = stripMetaText(text);
+track.className = "track-text" + (muted ? " muted" : "");
+}
+function startMetadataPolling() {
+if (metaTimer) window.clearInterval(metaTimer);
+if (!current || !current.meta) {
+setTrackText("Для этой станции нет текущего трека", true);
+return;
+}
+setTrackText("Обновление...", true);
+pollMetadata(metaToken);
+metaTimer = window.setInterval(function() {
+pollMetadata(metaToken);
+}, 5000);
+}
+function pollMetadata(token) {
+if (!current || !current.meta || token !== metaToken) return;
+var stationId = current.id;
+var stamp = Date.now();
+fetch("https://pic.fmplay.ru/stations/" + stationId + "/fmplay_id.json?" + stamp)
+.then(function(response) {
+return response.json();
+})
+.then(function(idData) {
+if (token !== metaToken || !current || current.id !== stationId) return null;
+if (!idData || idData.uniqueid === lastMetaId) return null;
+lastMetaId = idData.uniqueid;
+return fetch("https://pic.fmplay.ru/stations/" + stationId + "/fmplay_current.json?" + Date.now());
+})
+.then(function(response) {
+if (!response) return null;
+return response.json();
+})
+.then(function(meta) {
+if (!meta || token !== metaToken || !current || current.id !== stationId) return;
+    var artist = meta.artist || "";
+    var songTitle = meta.title || "";
+    var text = "";
+    if (artist && songTitle) text = artist + " - " + songTitle;
+    else text = artist || songTitle;
+  text = stripMetaText(text);
+  setTrackText(text || "Сейчас нет данных о треке", !text);
+  if (current && current.id === stationId) {
+    updateDocumentTitle(current.name, text);
+  }
+})
+.catch(function() {
+if (token === metaToken) setTrackText("Не удалось обновить текущий трек", true);
+});
+}
+function play() {
+if (!current && stations.length > 0) selectStation(stations[0], false);
+if (current && !audio.src) {
+var stream = streamFor(current);
+audio.src = stream.url;
+}
+audio.play()
+.then(function() {
+status.textContent = "Играет: " + current.name;
+})
+.catch(function(error) {
+status.textContent = "Не удалось запустить поток: " + error.message;
+});
+}
+function stop() {
+audio.pause();
+audio.removeAttribute("src");
+audio.load();
+status.textContent = current ? "Остановлено: " + current.name : "Остановлено";
+updateDocumentTitle(current ? current.name : "", "");
+}
+function togglePlay() {
+if (audio.paused || !audio.src) {
+play();
+} else {
+stop();
+}
+}
+function updatePlayButtonState(isPlaying) {
+var playBtn = document.getElementById("play");
+var cover = document.getElementById("cover");
+if (playBtn) {
+if (isPlaying) {
+playBtn.textContent = "Stop";
+playBtn.className = "control primary playing";
+if (cover) cover.classList.add("playing");
+} else {
+playBtn.textContent = "Play";
+playBtn.className = "control primary";
+if (cover) cover.classList.remove("playing");
+}
+}
+var activeStationBtn = document.querySelector(".station.active");
+if (activeStationBtn) {
+if (isPlaying) {
+activeStationBtn.classList.add("playing");
+} else {
+activeStationBtn.classList.remove("playing");
+}
+}
+}
+function filteredStations() {
+var q = search.value.trim().toLowerCase();
+var filtered = stations;
+if (onlyFavorites) {
+filtered = filtered.filter(function(station) {
+return isFavorite(station);
+});
+}
+if (!q) return filtered;
+return filtered.filter(function(station) {
+return station.name.toLowerCase().indexOf(q) !== -1 || station.id.toLowerCase().indexOf(q) !== -1;
+});
+}
+function findStationById(id) {
+if (!id) return null;
+for (var index = 0; index < stations.length; index += 1) {
+if (stations[index].id === id) return stations[index];
+}
+return null;
+}
+document.getElementById("play").addEventListener("click", togglePlay);
+favoriteButton.addEventListener("click", function() {
+toggleFavorite(current);
+});
+widthToggle.addEventListener("click", postToggleWidth);
+settingsButton.addEventListener("click", openSettings);
+settingsClose.addEventListener("click", closeSettings);
+settingsModal.addEventListener("click", function(event) {
+if (event.target === settingsModal) closeSettings();
+});
+var themeBtns = themeSegmented.getElementsByClassName("theme-btn");
+for (var btnIndex = 0; btnIndex < themeBtns.length; btnIndex += 1) {
+themeBtns[btnIndex].addEventListener("click", function(event) {
+applyTheme(event.target.getAttribute("data-theme"));
+saveAppConfig();
+});
+}
+var filterBtns = document.getElementById("favorites-segmented").getElementsByClassName("fav-filter-btn");
+for (var btnIndex = 0; btnIndex < filterBtns.length; btnIndex += 1) {
+filterBtns[btnIndex].addEventListener("click", function(event) {
+applyFavoritesFilter(event.target.getAttribute("data-filter") === "favorites");
+saveAppConfig();
+});
+}
+document.addEventListener("keydown", function(event) {
+if (event.key === "Escape") closeSettings();
+});
+document.getElementById("volume").addEventListener("input", function(event) {
+audio.volume = Number(event.target.value);
+saveAppConfig();
+});
+search.addEventListener("input", function() {
+render(filteredStations());
+});
+function updateWindowSize() {
+updateWidthToggle();
+saveAppConfig();
+}
+window.addEventListener("resize", updateWindowSize);
+applyTheme(currentTheme);
+applyFavoritesFilter(onlyFavorites);
+audio.volume = isFinite(savedVolume) ? Math.min(1, Math.max(0, savedVolume)) : 0.9;
+document.getElementById("volume").value = String(audio.volume);
+updateWindowSize();
+audio.addEventListener("play", function() {
+updatePlayButtonState(true);
+});
+audio.addEventListener("playing", function() {
+updatePlayButtonState(true);
+});
+audio.addEventListener("pause", function() {
+updatePlayButtonState(false);
+});
+audio.addEventListener("ended", function() {
+updatePlayButtonState(false);
+});
+audio.addEventListener("emptied", function() {
+updatePlayButtonState(false);
+});
+audio.addEventListener("waiting", function() {
+status.textContent = "Буферизация...";
+});
+audio.addEventListener("error", function() {
+status.textContent = "Ошибка аудиопотока. Попробуйте другое качество или станцию.";
+});
+render(filteredStations());
+if (stations.length > 0) selectStation(findStationById(savedLastStation) || stations[0], false);
+updateFavoriteButton();
+</script>
+</body>
+</html>
