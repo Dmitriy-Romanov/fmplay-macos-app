@@ -1,6 +1,6 @@
 # FMPLAY macOS
 
-Версия: `1.4.0`
+Версия: `1.4.1`
 
 FMPLAY macOS - небольшое нативное приложение для macOS, написанное на Rust, для прослушивания радиостанций из каталога [`fmplay.ru`](https://fmplay.ru/).
 
@@ -75,7 +75,7 @@ xattr -rd com.apple.quarantine "FMPLAY Radio.app"
 В репозитории настроен GitHub Actions workflow:
 
 - при push в `master` собирается macOS `.app` и загружается build artifact;
-- при push тега вида `v1.4.0` дополнительно создается GitHub Release;
+- при push тега вида `v1.4.1` дополнительно создается GitHub Release;
 - в release прикладывается архив `FMPLAY Radio-macOS.zip`.
 
 Чтобы выпустить релиз:

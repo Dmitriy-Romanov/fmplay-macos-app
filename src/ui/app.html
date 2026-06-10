@@ -684,9 +684,9 @@ function updateDocumentTitle(stationName, trackName) {
 var newTitle = "FMPLAY Radio";
 if (stationName) {
 if (trackName && trackName.indexOf("Выберите станцию") === -1 && trackName.indexOf("Обновление") === -1 && trackName.indexOf("Не удалось") === -1) {
-newTitle = stationName + " — " + trackName + " | FMPLAY";
+newTitle = stationName + " — " + trackName + " | FMPLAY {VERSION}";
 } else {
-newTitle = stationName + " | FMPLAY";
+newTitle = stationName + " | FMPLAY {VERSION}";
 }
 }
 document.title = newTitle;

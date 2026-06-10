@@ -163,12 +163,6 @@ pub fn parse_stations(raw: BTreeMap<String, StationRaw>) -> Vec<Station> {
         .collect()
 }
 
-#[allow(dead_code)]
-pub fn refresh_stations() -> AppResult<()> {
-    let stations = load_stations_remote()?;
-    save_cached_stations(&stations);
-    Ok(())
-}
 
 pub fn cache_path() -> AppResult<PathBuf> {
     let home = std::env::var_os("HOME").ok_or("HOME is not set")?;

@@ -49,5 +49,7 @@ pub fn build_html(
     template = template.replace("{stations_json}", stations_json);
     template = template.replace("{config_json}", &config_json);
     template = template.replace("{count}", &stations.len().to_string());
+    let version = env!("CARGO_PKG_VERSION");
+    template = template.replace("{VERSION}", version);
     template
 }
