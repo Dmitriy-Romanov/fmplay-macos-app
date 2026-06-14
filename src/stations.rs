@@ -10,17 +10,10 @@ const STATIONS_URL: &str = "https://fmplay.ru/stations.json";
 pub const CACHE_TTL_SECS: u64 = 3600;
 
 #[derive(Debug, Deserialize)]
-#[allow(dead_code)]
 pub struct StationRaw {
     pub name: String,
     #[serde(default)]
-    pub site: String,
-    #[serde(default)]
     pub logo: String,
-    #[serde(default)]
-    pub category: String,
-    #[serde(default)]
-    pub position: String,
     #[serde(default)]
     pub enabled: String,
     #[serde(default)]
@@ -40,8 +33,6 @@ pub struct Station {
     pub id: String,
     pub name: String,
     pub logo: String,
-    pub category: String,
-    pub position: u32,
     pub meta: bool,
     pub streams: Vec<Stream>,
 }
@@ -154,8 +145,6 @@ pub fn parse_stations(raw: BTreeMap<String, StationRaw>) -> Vec<Station> {
                 id,
                 name: raw.name,
                 logo: crate::player::absolute_url(&raw.logo),
-                category: raw.category,
-                position: raw.position.parse().unwrap_or(u32::MAX),
                 meta: raw.meta.as_deref() == Some("meta"),
                 streams,
             })
